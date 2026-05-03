@@ -28,14 +28,12 @@ jobs:
           # This token is what enables PR comments and the dashboard
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
-      # Uploads results to Security -> Code scanning alerts
       - name: Upload to GitHub Security Tab
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
-        if: always() # Upload results even if the scan fails or finds bugs
+        if: always()
 
-      # Makes the raw SARIF file available in the "Actions" run summary
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v6
         with:

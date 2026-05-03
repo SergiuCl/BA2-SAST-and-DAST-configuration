@@ -22,12 +22,12 @@ jobs:
   - type: spider
     parameters:
       context: "juice-shop"
-      maxDuration: 15
+      maxDuration: 10
 
   - type: spiderAjax
     parameters:
       context: "juice-shop"
-      maxDuration: 15
+      maxDuration: 10
       browserId: "firefox-headless"
 
   - type: passiveScan-wait
@@ -38,7 +38,7 @@ jobs:
     parameters:
       context: "juice-shop"
       policy: "Default Policy"
-      maxRuleDurationInMins: 20
+      maxRuleDurationInMins: 15
 
   - type: passiveScan-wait
     parameters:

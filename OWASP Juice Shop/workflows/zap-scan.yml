@@ -17,6 +17,8 @@ jobs:
   zap-dast:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code

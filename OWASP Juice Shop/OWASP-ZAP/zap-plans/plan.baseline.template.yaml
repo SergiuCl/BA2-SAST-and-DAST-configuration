@@ -16,16 +16,16 @@ jobs:
   - type: spider
     parameters:
       context: "juice-shop"
-      maxDuration: 5
+      maxDuration: 3
 
   - type: spiderAjax
     parameters:
       context: "juice-shop"
-      maxDuration: 5
+      maxDuration: 2
 
   - type: passiveScan-wait
     parameters:
-      maxDuration: 3
+      maxDuration: 2
 
   - type: report
     parameters:
