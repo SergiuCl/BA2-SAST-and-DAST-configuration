@@ -1,0 +1,93 @@
+plan:
+  title: "Juice Shop AF Full Scan (Authenticated)"
+  description: "Authenticated active scan of OWASP Juice Shop using admin credentials"
+  version: "1.0.0"
+
+env:
+  contexts:
+    - name: "juice-shop"
+      urls:
+        - "${TARGET_URL}"
+      authentication:
+        method: "json"
+        parameters:
+          loginPageUrl: "${TARGET_URL}rest/user/login"
+          loginRequestUrl: "${TARGET_URL}rest/user/login"
+          loginRequestBody: '{"email":"{%username%}","password":"{%password%}"}'
+        verification:
+          method: "response"
+          loggedInRegex: "\\Qtoken\\E"
+          loggedOutRegex: "\\QInvalid email or password\\E"
+      sessionManagement:
+        method: "headers"
+        parameters:
+          Authorization: "Bearer {%header:authentication.token%}"
+      users:
+        - name: "admin"
+          credentials:
+            username: "admin@juice-sh.op"
+            password: "admin123"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+
+jobs:
+  - type: openapi
+    parameters:
+      apiFile: "/zap/wrk/swagger.yml"
+      targetUrl: "${TARGET_URL}"
+      context: "juice-shop"
+
+  - type: spider
+    parameters:
+      context: "juice-shop"
+      user: "admin"
+      maxDuration: 15
+
+  - type: spiderAjax
+    parameters:
+      context: "juice-shop"
+      user: "admin"
+      maxDuration: 15
+      browserId: "firefox-headless"
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  - type: activeScan
+    parameters:
+      context: "juice-shop"
+      user: "admin"
+      policy: "Default Policy"
+      maxRuleDurationInMins: 20
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  - type: report
+    parameters:
+      template: "traditional-html"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "full-authenticated-scan-report.html"
+      reportTitle: "ZAP AF Full Authenticated Scan - OWASP Juice Shop"
+
+  - type: report
+    parameters:
+      template: "traditional-json"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "full-authenticated-scan-report.json"
+      reportTitle: "ZAP AF Full Authenticated Scan - OWASP Juice Shop"
+
+  - type: report
+    parameters:
+      template: "traditional-xml"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "full-authenticated-scan-report.xml"
+      reportTitle: "ZAP AF Full Authenticated Scan - OWASP Juice Shop"
+
+  - type: outputSummary
+    parameters:
+      format: LONG
+      summaryFile: "${REPORT_DIR}/full-authenticated-scan-summary.json"

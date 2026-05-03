@@ -1,0 +1,71 @@
+plan:
+  title: "Juice Shop AF Full Scan"
+  description: "Active scan of OWASP Juice Shop"
+  version: "1.0.0"
+
+env:
+  contexts:
+    - name: "juice-shop"
+      urls:
+        - "${TARGET_URL}"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+
+jobs:
+  - type: openapi
+    parameters:
+      apiFile: "/zap/wrk/swagger.yml"
+      targetUrl: "${TARGET_URL}"
+      context: "juice-shop"
+
+  - type: spider
+    parameters:
+      context: "juice-shop"
+      maxDuration: 15
+
+  - type: spiderAjax
+    parameters:
+      context: "juice-shop"
+      maxDuration: 15
+      browserId: "firefox-headless"
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  - type: activeScan
+    parameters:
+      context: "juice-shop"
+      policy: "Default Policy"
+      maxRuleDurationInMins: 20
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  - type: report
+    parameters:
+      template: "traditional-html"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "full-scan-report.html"
+      reportTitle: "ZAP AF Full Scan - OWASP Juice Shop"
+
+  - type: report
+    parameters:
+      template: "traditional-json"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "full-scan-report.json"
+      reportTitle: "ZAP AF Full Scan - OWASP Juice Shop"
+
+  - type: report
+    parameters:
+      template: "traditional-xml"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "full-scan-report.xml"
+      reportTitle: "ZAP AF Full Scan - OWASP Juice Shop"
+
+  - type: outputSummary
+    parameters:
+      format: LONG
+      summaryFile: "${REPORT_DIR}/full-scan-summary.json"

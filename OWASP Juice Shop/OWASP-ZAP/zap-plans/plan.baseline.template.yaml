@@ -1,0 +1,61 @@
+plan:
+  title: "Juice Shop AF Baseline"
+  description: "Passive scan (no active attacks)"
+  version: "1.0.0"
+
+env:
+  contexts:
+    - name: "juice-shop"
+      urls:
+        - "${TARGET_URL}"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+
+jobs:
+  - type: spider
+    parameters:
+      context: "juice-shop"
+      maxDuration: 5
+
+  - type: spiderAjax
+    parameters:
+      context: "juice-shop"
+      maxDuration: 5
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 3
+
+  - type: report
+    parameters:
+      template: "traditional-html"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "baseline-report.html"
+      reportTitle: "ZAP AF Baseline - OWASP Juice Shop"
+
+  - type: report
+    parameters:
+      template: "traditional-json"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "baseline-report.json"
+      reportTitle: "ZAP AF Baseline - OWASP Juice Shop"
+
+  - type: report
+    parameters:
+      template: "traditional-xml"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "baseline-scan-report.xml"
+      reportTitle: "ZAP AF Baseline - OWASP Juice Shop"
+
+  - type: report
+    parameters:
+      template: "traditional-md"
+      reportDir: "${REPORT_DIR}"
+      reportFile: "baseline-report.md"
+      reportTitle: "ZAP AF Baseline - OWASP Juice Shop"
+
+  - type: outputSummary
+    parameters:
+      format: LONG
+      summaryFile: "${REPORT_DIR}/baseline-summary.json"

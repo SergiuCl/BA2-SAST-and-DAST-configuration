@@ -1,0 +1,54 @@
+name: "CodeQL"
+
+env:
+  CODEQL_EXTRACTOR_JAVA_RUN_ANNOTATION_PROCESSORS: true
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        # Get full history for spotless ratchetFrom
+        with:
+          fetch-depth: 0
+
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          config-file: .github/codeql/codeql-config.yml
+          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.25.1/codeql-bundle-linux64.tar.zst
+
+      - name: Build with Maven
+        run: mvn -DskipTests=true install
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+
+      - name: Upload Output
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.language }} SARIF
+          path: ${{ runner.workspace }}/results/*.sarif
+        if: always()
+        

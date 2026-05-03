@@ -1,0 +1,92 @@
+name: OWASP ZAP DAST Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'ZAP scan type'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - baseline
+          - full
+          - full.authenticated
+
+jobs:
+  zap-dast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build and start Juice Shop
+        run: |
+          npm start &
+          echo "Juice Shop starting in background..."
+
+      - name: Wait for Juice Shop to be ready
+        run: |
+          echo "Waiting for Juice Shop on http://localhost:3000/"
+          TIMEOUT=120
+          INTERVAL=5
+          elapsed=0
+          while [ $elapsed -lt $TIMEOUT ]; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
+            if echo "$HTTP_CODE" | grep -qE "^(200|301|302|303)$"; then
+              echo "Juice Shop is ready! (HTTP $HTTP_CODE) after ${elapsed}s"
+              exit 0
+            fi
+            echo "Waiting... ($elapsed/${TIMEOUT}s) - HTTP $HTTP_CODE"
+            sleep $INTERVAL
+            elapsed=$((elapsed + INTERVAL))
+          done
+          echo "ERROR: Juice Shop did not start within ${TIMEOUT}s"
+          exit 1
+
+      - name: Generate ZAP plan
+        env:
+          SCAN_TYPE: ${{ inputs.scan_type }}
+        run: |
+          TEMPLATE="OWASP-ZAP/zap-plans/plan.${SCAN_TYPE}.template.yaml"
+          GENERATED="OWASP-ZAP/zap-plans/plan.generated.yaml"
+
+          sed -e 's|${TARGET_URL}|http://host.docker.internal:3000/|g' \
+              -e 's|${REPORT_DIR}|/zap/wrk/reports|g' \
+              "$TEMPLATE" > "$GENERATED"
+
+          echo "Generated ZAP plan:"
+          cat "$GENERATED"
+
+      - name: Prepare reports directory
+        run: |
+          mkdir -p OWASP-ZAP/reports
+          chmod 777 OWASP-ZAP/reports
+
+      - name: Run ZAP scan
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -v "${{ github.workspace }}/OWASP-ZAP/reports:/zap/wrk/reports:rw" \
+            -v "${{ github.workspace }}/OWASP-ZAP/zap-plans:/zap/wrk/zap-plans:ro" \
+            -v "${{ github.workspace }}/swagger.yml:/zap/wrk/swagger.yml:ro" \
+            zaproxy/zap-stable:2.16.1 \
+            zap.sh -cmd -autorun /zap/wrk/zap-plans/plan.generated.yaml
+
+      - name: Upload ZAP reports
+        uses: actions/upload-artifact@v6
+        with:
+          name: zap-reports
+          path: OWASP-ZAP/reports/
+        if: always()
