@@ -1,4 +1,4 @@
-name: "OWASP Benchmark CodeQL Config"
+name: "OWASP Juice Shop CodeQL Config"
 
 queries:
   - uses: security-extended
